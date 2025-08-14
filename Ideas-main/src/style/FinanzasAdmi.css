@@ -1,0 +1,137 @@
+/* FinanzasAdmiV1.css */
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap');
+
+body {
+  font-family: 'Poppins', sans-serif;
+}
+
+.finanzas-container {
+  background-color: #f0f4f8;
+  min-height: 100vh;
+  padding: 40px 20px;
+}
+
+.finanzas-content {
+  max-width: 900px;
+  margin: auto;
+  background-color: white;
+  padding: 30px 40px;
+  border-radius: 14px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+}
+
+.finanzas-title {
+  font-size: 28px;
+  font-weight: 700;
+  text-align: center;
+  margin-bottom: 30px;
+  color: #003366;
+}
+
+.finanzas-search {
+  width: 100%;
+  padding: 14px 18px;
+  border: 2px solid #003366;
+  border-radius: 10px;
+  font-size: 16px;
+  margin-bottom: 35px;
+  transition: border-color 0.3s ease;
+}
+
+.finanzas-search:focus {
+  outline: none;
+  border-color: #0066cc;
+}
+
+.alumnos-lista {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.alumno-card {
+  background-color: #fff;
+  padding: 24px 28px;
+  border-radius: 14px;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.alumno-card:hover {
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.18);
+  transform: translateY(-6px);
+}
+
+.alumno-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alumno-nombre {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 0 0 4px 0;
+}
+
+.alumno-rut {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.alumno-finanzas p {
+  margin: 3px 0;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.deuda {
+  color: #cc3333;
+}
+
+.pagado {
+  color: #009933;
+}
+
+.alumno-detalles {
+  margin-top: 20px;
+}
+
+.titulo-detalles {
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: #004080;
+}
+
+.lista-detalles {
+  list-style-type: disc;
+  padding-left: 22px;
+  margin: 0;
+}
+
+.pago {
+  color: #009933;
+}
+
+.deuda-item {
+  color: #cc3333;
+}
+
+.boton-pago {
+  background-color: #4caf50;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  margin-top: 8px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-weight: 600;
+  transition: background-color 0.3s ease;
+}
+
+.boton-pago:hover {
+  background-color: #45a049;
+}

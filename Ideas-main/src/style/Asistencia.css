@@ -1,0 +1,243 @@
+/* Contenedor principal */
+.asistencia-container {
+  max-width: 900px;
+  margin: 40px auto;
+  padding: 30px 40px;
+  background: #ffffff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #2c3e50;
+}
+
+/* Título */
+.titulo {
+  text-align: center;
+  font-size: 32px;
+  margin-bottom: 30px;
+  font-weight: 700;
+  color: #34495e;
+  letter-spacing: 1.2px;
+}
+
+/* Filtros */
+.filtros {
+  display: flex;
+  justify-content: space-between;
+  gap: 25px;
+  margin-bottom: 35px;
+  flex-wrap: wrap;
+}
+
+.filtro-item {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 220px;
+}
+
+.filtro-item label {
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: #34495e;
+  font-size: 16px;
+}
+
+.filtro-item select,
+.filtro-item input {
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: 1.8px solid #bdc3c7;
+  font-size: 16px;
+  background-color: #fefefe;
+  transition: border-color 0.3s ease;
+}
+
+.filtro-item select:focus,
+.filtro-item input:focus {
+  outline: none;
+  border-color: #2980b9;
+  box-shadow: 0 0 6px rgba(41, 128, 185, 0.3);
+}
+
+/* Tabla */
+.asistencia-tabla {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  margin-bottom: 30px;
+  background-color: transparent;
+  font-size: 16px;
+  user-select: none;
+}
+
+.asistencia-tabla thead tr {
+  background-color: #2980b9;
+  color: #fff;
+  font-weight: 600;
+  border-radius: 12px;
+}
+
+.asistencia-tabla thead th {
+  padding: 14px 20px;
+  text-align: left;
+}
+
+.asistencia-tabla tbody tr {
+  background-color: #f8f9fa;
+  border-radius: 12px;
+  transition: background-color 0.25s ease;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.05);
+}
+
+.asistencia-tabla tbody tr:hover {
+  background-color: #d6e9f8;
+  cursor: pointer;
+}
+
+.asistencia-tabla tbody td {
+  padding: 15px 20px;
+  vertical-align: middle;
+  color: #34495e;
+  font-weight: 500;
+  border-bottom: none;
+  border-radius: 12px;
+}
+
+/* Estado de asistencia */
+.estado {
+  font-weight: 700;
+  padding: 8px 16px;
+  border-radius: 14px;
+  display: inline-block;
+  min-width: 110px;
+  text-align: center;
+  user-select: none;
+  font-size: 15px;
+}
+
+.presente {
+  background-color: #d4edda;
+  color: #155724;
+  box-shadow: 0 0 8px rgba(37, 155, 58, 0.3);
+}
+
+.ausente {
+  background-color: #f8d7da;
+  color: #721c24;
+  box-shadow: 0 0 8px rgba(220, 53, 69, 0.3);
+}
+
+.justificado {
+  background-color: #fff3cd;
+  color: #856404;
+  box-shadow: 0 0 8px rgba(255, 193, 7, 0.3);
+}
+
+.sin-marcar {
+  background-color: #e2e3e5;
+  color: #383d41;
+  box-shadow: none;
+}
+
+/* Botones de estado */
+.botones-estado {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: 14px;
+  cursor: pointer;
+  color: white;
+  font-size: 14px;
+  font-weight: 600;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.12);
+  transition: background-color 0.3s ease, transform 0.15s ease;
+  user-select: none;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn.presente {
+  background-color: #28a745;
+  box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
+}
+
+.btn.presente:hover {
+  background-color: #218838;
+}
+
+.btn.ausente {
+  background-color: #dc3545;
+  box-shadow: 0 4px 12px rgba(220, 53, 69, 0.4);
+}
+
+.btn.ausente:hover {
+  background-color: #c82333;
+}
+
+.btn.justificado {
+  background-color: #ffc107;
+  color: #212529;
+  box-shadow: 0 4px 12px rgba(255, 193, 7, 0.4);
+}
+
+.btn.justificado:hover {
+  background-color: #e0a800;
+}
+
+/* Botón guardar */
+.btn-guardar {
+  padding: 14px 28px;
+  background-color: #007bff;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 18px;
+  font-weight: 700;
+  display: block;
+  margin: 0 auto 20px auto;
+  box-shadow: 0 6px 16px rgba(0, 123, 255, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.btn-guardar:disabled {
+  background-color: #7aa9d9;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+.btn-guardar:hover:not(:disabled) {
+  background-color: #0056b3;
+  box-shadow: 0 8px 20px rgba(0, 86, 179, 0.7);
+}
+
+/* Botón descargar */
+.btn-descargar {
+  padding: 12px 26px;
+  background-color: #17a2b8;
+  color: white;
+  border: none;
+  border-radius: 18px;
+  cursor: pointer;
+  font-size: 17px;
+  font-weight: 700;
+  display: block;
+  margin: 0 auto;
+  box-shadow: 0 6px 16px rgba(23, 162, 184, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  user-select: none;
+}
+
+.btn-descargar:hover {
+  background-color: #117a8b;
+  box-shadow: 0 8px 20px rgba(17, 122, 139, 0.7);
+}

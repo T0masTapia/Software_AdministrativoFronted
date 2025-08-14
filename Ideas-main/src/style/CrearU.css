@@ -1,0 +1,174 @@
+/* Contenedor general */
+.matricula-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 48px;
+  flex-wrap: wrap;
+  padding: 48px 24px;
+  background: #f9fafc;
+  min-height: 100vh;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+/* Contenedor del formulario */
+.matricula-container {
+  flex: 1;
+  max-width: 480px;
+  padding: 32px 36px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.3s ease;
+}
+
+.matricula-container:hover {
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.15);
+}
+
+/* Contenedor de la tabla */
+.tabla-alumnos {
+  flex: 1;
+  max-width: 700px;
+  background: #fff;
+  padding: 32px 28px;
+  border-radius: 12px;
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.1);
+  transition: box-shadow 0.3s ease;
+  overflow-x: auto;
+}
+
+.tabla-alumnos:hover {
+  box-shadow: 0 12px 30px rgb(0 0 0 / 0.15);
+}
+
+/* Titulos */
+h2, h3 {
+  text-align: center;
+  color: #0a3d62;
+  margin-bottom: 28px;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+}
+
+/* Formularios */
+.matricula-form label {
+  display: block;
+  margin-bottom: 18px;
+  font-weight: 600;
+  color: #34495e;
+  font-size: 1rem;
+}
+
+.matricula-form input {
+  width: 100%;
+  padding: 12px 16px;
+  margin-top: 8px;
+  border: 1.5px solid #bdc3c7;
+  border-radius: 8px;
+  font-size: 1rem;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+  color: #2c3e50;
+  outline-offset: 2px;
+}
+
+.matricula-form input:focus {
+  border-color: #0a74da;
+  box-shadow: 0 0 6px #0a74daaa;
+  outline: none;
+}
+
+.input-error {
+  border-color: #e74c3c !important;
+  box-shadow: 0 0 6px #e74c3caa !important;
+}
+
+/* Texto error */
+.error-text {
+  color: #e74c3c;
+  font-size: 0.85rem;
+  margin-top: 4px;
+  display: block;
+}
+
+/* Botón */
+.btn-matricular {
+  width: 100%;
+  padding: 16px;
+  background-color: #0a74da;
+  color: white;
+  font-weight: 700;
+  font-size: 1.15rem;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  margin-top: 24px;
+  box-shadow: 0 6px 15px rgb(10 116 218 / 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.btn-matricular:hover {
+  background-color: #065bb5;
+  box-shadow: 0 8px 20px rgb(6 91 181 / 0.7);
+}
+
+/* Tabla */
+.tabla-alumnos table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0 8px;
+  font-size: 1rem;
+  color: #34495e;
+}
+
+.tabla-alumnos th,
+.tabla-alumnos td {
+  padding: 14px 18px;
+  text-align: left;
+  background: #f7f9fc;
+  border-radius: 8px;
+  box-shadow: inset 0 -1px 0 #dcdde1;
+}
+
+.tabla-alumnos th {
+  background-color: #0a74da;
+  color: white;
+  font-weight: 600;
+  box-shadow: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.tabla-alumnos tr:hover td {
+  background-color: #d6e9ff;
+  transition: background-color 0.25s ease;
+}
+
+/* Input filtro */
+.input-filtro {
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 22px;
+  border: 1.5px solid #bdc3c7;
+  border-radius: 8px;
+  font-size: 1rem;
+  color: #2c3e50;
+  transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.input-filtro:focus {
+  border-color: #0a74da;
+  box-shadow: 0 0 6px #0a74daaa;
+  outline: none;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .matricula-wrapper {
+    flex-direction: column;
+    padding: 20px 12px;
+  }
+  
+  .matricula-container, .tabla-alumnos {
+    max-width: 100%;
+  }
+}
