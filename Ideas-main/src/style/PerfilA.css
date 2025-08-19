@@ -57,7 +57,6 @@
   padding: 8px 0;
   border-bottom: 1px solid #eee;
   font-size: 1rem;
-  
 }
 
 .etiqueta {
@@ -107,45 +106,42 @@
 .resumen-cursos {
   display: flex;
   flex-direction: column;
+  gap: 15px;
 }
 
-.tabla-cursos {
-  width: 100%;
-  border-collapse: collapse;
+.cursos-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 15px;
   margin-top: 10px;
 }
 
-.tabla-cursos th,
-.tabla-cursos td {
-  border: 1px solid #ddd;
-  padding: 10px 15px;
-  text-align: left;
-}
-
-.tabla-cursos th {
-  background-color: var(--color-primario);
-  color: white;
+.card-curso {
+  background-color: #fff;
+  padding: 20px;
+  border-radius: var(--borde-radio);
+  box-shadow: 0 4px 10px rgba(0,0,0,0.08);
+  text-align: center;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
   font-weight: 600;
-  font-size: 1rem;
+  color: var(--color-primario);
 }
 
-.tabla-cursos tr:nth-child(even) {
-  background-color: #f9f9f9;
+.card-curso:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 20px rgba(0,0,0,0.12);
 }
 
-.tabla-cursos tr:hover {
-  background-color: #e3f2fd;
+
+.grafico-torta, .grafico-barras {
+  width: 100%;
 }
 
 .btn-deuda {
   margin-top: 20px;
   width: 100%;
   justify-content: center;
-}
-
-/* Para los gráficos en right-panel */
-.grafico-torta, .grafico-barras {
-  width: 100%;
 }
 
 /* Responsive */
@@ -161,9 +157,11 @@
   .right-panel {
     margin-top: 30px;
   }
+  .cursos-cards {
+    justify-content: center;
+  }
 }
 
 .datos-personales .btn-secundario {
   justify-content: center;
 }
-

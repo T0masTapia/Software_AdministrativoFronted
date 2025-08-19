@@ -1,28 +1,13 @@
 import { useEffect, useState } from "react";
 import '../style/PerfilA.css';
 import {
-  BarChart,
-  Bar,
-  XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
-  PieChart,
-  Pie,
-  Cell,
-  Legend
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
+  ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
-  faUser,
-  faIdCard,
-  faEnvelope,
-  faLock,
-  faKey,
-  faMoneyBillWave,
-  faClipboardList
+  faUser, faIdCard, faEnvelope, faLock, faKey, faClipboardList
 } from '@fortawesome/free-solid-svg-icons';
 
 import NavbarPag from '../components/NavbarPag';
@@ -33,17 +18,14 @@ const COLORS = ['#4caf50', '#f44336', '#2196f3']; // verde, rojo, azul
 const AlumnoPortal = () => {
   const { rut, idUsuario } = useAdmin();
 
-  // Estado para datos del alumno
   const [alumno, setAlumno] = useState<{
     nombre_completo: string;
     rut: string;
     correo: string;
   } | null>(null);
 
-  // Estado para cursos inscritos
-  const [cursos, setCursos] = useState<Array<{ nombre_curso: string; id_curso?: string | number }>>([]);
-
-  const [deuda, setDeuda] = useState(150000); // Ejemplo deuda
+  const [cursos, setCursos] = useState<Array<{ nombre_curso: string; id_curso?: string | number; urlCeforlav?: string }>>([]);
+  const [deuda, setDeuda] = useState(150000);
 
   const [asistenciaData, setAsistenciaData] = useState([
     { mes: 'Abr', asistencia: 68, inasistencia: 20, justificado: 12 },
@@ -62,10 +44,7 @@ const AlumnoPortal = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Estado para controlar modal
   const [modalOpen, setModalOpen] = useState(false);
-
-  // Estados para inputs del modal
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -77,7 +56,6 @@ const AlumnoPortal = () => {
 
     setLoading(true);
 
-    // Fetch datos del alumno
     fetch(`http://localhost:3001/alumnos/${rut}`)
       .then(res => res.json())
       .then(data => {
@@ -95,12 +73,16 @@ const AlumnoPortal = () => {
       .catch(() => setError("Error al obtener datos"))
       .finally(() => setLoading(false));
 
-    // Fetch cursos inscritos
     fetch(`http://localhost:3001/alumnoCurso/cursos/${rut}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.cursos) {
-          setCursos(data.cursos);
+          // Agregamos un URL ficticio para cada curso (reemplaza con el real)
+          const cursosConUrl = data.cursos.map((c: any) => ({
+            ...c,
+            urlCeforlav: `https://cefrolav.cl/cursos/${c.id_curso || c.nombre_curso}`
+          }));
+          setCursos(cursosConUrl);
         } else {
           setCursos([]);
         }
@@ -108,7 +90,6 @@ const AlumnoPortal = () => {
       .catch(() => setCursos([]));
   }, [rut]);
 
-  // Función para manejar el cambio de contraseña
   const handleChangePassword = () => {
     setPasswordError(null);
     setPasswordSuccess(null);
@@ -135,7 +116,7 @@ const AlumnoPortal = () => {
           setCurrentPassword('');
           setNewPassword('');
           setConfirmPassword('');
-          setTimeout(() => setModalOpen(false), 1500); // Cierra modal después de 1.5 seg
+          setTimeout(() => setModalOpen(false), 1500);
         } else {
           setPasswordError(data.message || "Error al cambiar la contraseña.");
         }
@@ -189,26 +170,18 @@ const AlumnoPortal = () => {
             {cursos.length === 0 ? (
               <p style={{ color: '#333' }}>No estás inscrito en ningún curso.</p>
             ) : (
-              <table className="tabla-cursos">
-                <thead>
-                  <tr>
-                    <th>#</th>
-                    <th>Nombre del Curso</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {cursos.map((curso, index) => (
-                    <tr key={curso.id_curso || curso.nombre_curso}>
-                      <td>{index + 1}</td>
-                      <td>{curso.nombre_curso}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+              <div className="cursos-cards">
+                {cursos.map((curso, index) => (
+                  <div
+                    key={curso.id_curso || curso.nombre_curso}
+                    className="card-curso"
+                    onClick={() => window.open('https://ceforlav.cl/aula', "_blank")}
+                  >
+                    {curso.nombre_curso}
+                  </div>
+                ))}
+              </div>
             )}
-            {/* <button className="btn-primario btn-deuda" title={`Deuda actual: $${deuda.toLocaleString()}`}>
-              <FontAwesomeIcon icon={faMoneyBillWave} /> Ver Deuda (${deuda.toLocaleString()})
-            </button> */}
           </div>
 
         </div>
@@ -218,7 +191,6 @@ const AlumnoPortal = () => {
           <h3 style={{ color: '#333' }}>
             <FontAwesomeIcon icon={faClipboardList} /> Resumen de Asistencia
           </h3>
-
 
           <div className="grafico-torta" style={{ marginTop: 10 }}>
             <ResponsiveContainer width="100%" height={250}>
