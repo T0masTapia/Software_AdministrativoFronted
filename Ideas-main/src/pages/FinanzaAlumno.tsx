@@ -9,6 +9,7 @@ interface Transaccion {
   descripcion: string;
   monto: number;
   fecha_deuda: Date;
+  id_deuda?: number;
 }
 
 const FinanzasAlumno = () => {
@@ -18,38 +19,69 @@ const FinanzasAlumno = () => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para el modal
+  // Modal
   const [montoPago, setMontoPago] = useState<number>(0);
-  const [metodo, setMetodo] = useState("tarjeta");
-
-  // Estados para tarjeta
-  const [numeroTarjeta, setNumeroTarjeta] = useState("");
-  const [bancoDetectado, setBancoDetectado] = useState<string | null>(null);
+  const [tipoPago, setTipoPago] = useState<'total' | 'abono'>('total');
+  const [conceptoPago, setConceptoPago] = useState<'matricula' | 'cursos'>('matricula');
 
   const cargarTransacciones = async () => {
     if (!rut) return;
-
     setCargando(true);
     setError(null);
-
     try {
+      // 1️⃣ Traer deudas del alumno
       let url = `http://localhost:3001/deuda/alumno/${rut}`;
       const params = new URLSearchParams();
       if (filtro.desde) params.append('desde', filtro.desde);
       if (filtro.hasta) params.append('hasta', filtro.hasta);
       if (params.toString()) url += `?${params.toString()}`;
+      const resDeuda = await fetch(url);
+      if (!resDeuda.ok) throw new Error('Error al obtener las transacciones');
+      const dataDeuda = await resDeuda.json();
+      if (!dataDeuda.success) throw new Error('No se encontraron deudas');
 
-      const res = await fetch(url);
-      if (!res.ok) throw new Error('Error al obtener las transacciones');
+      const deudas: any[] = dataDeuda.transacciones;
 
-      const data = await res.json();
+      // 2️⃣ Traer pagos de cada deuda
+      const pagosPromises = deudas.map(async (d) => {
+        const resPago = await fetch(`http://localhost:3001/pago/deuda/${d.id_deuda}`);
+        const dataPago = await resPago.json();
+        return dataPago.success
+          ? dataPago.pagos.map((p: any) => ({
+              fecha: p.fecha_pago,
+              tipo: 'pago',
+              descripcion:
+                p.tipo_pago === 'total'
+                  ? `Pago total (${p.concepto_pago})`
+                  : `Abono (${p.concepto_pago})`,
+              monto: -p.monto,
+              fecha_deuda: p.fecha_pago,
+            }))
+          : [];
+      });
 
-      if (data.success) {
-        setTransacciones(data.transacciones);
-      } else {
-        setError('No se encontraron transacciones');
-        setTransacciones([]);
-      }
+      const pagosArray = await Promise.all(pagosPromises);
+
+      // 3️⃣ Mezclar deudas y pagos en un solo arreglo
+      let todasTransacciones: Transaccion[] = [];
+      deudas.forEach((d, i) => {
+        todasTransacciones.push({
+          fecha: d.fecha,
+          tipo: 'deuda',
+          descripcion: d.descripcion,
+          monto: d.monto,
+          fecha_deuda: d.fecha,
+          id_deuda: d.id_deuda,
+        });
+        todasTransacciones.push(...pagosArray[i]);
+      });
+
+      // Ordenar por fecha descendente
+      todasTransacciones.sort(
+        (a, b) => new Date(b.fecha_deuda).getTime() - new Date(a.fecha_deuda).getTime()
+      );
+
+      setTransacciones(todasTransacciones);
     } catch (err: any) {
       setError(err.message || 'Error desconocido');
       setTransacciones([]);
@@ -63,32 +95,55 @@ const FinanzasAlumno = () => {
   }, [rut]);
 
   const ingresos = transacciones
-    .filter(t => t.monto > 0)
+    .filter((t) => t.tipo === 'deuda' && t.monto > 0)
     .reduce((acc, t) => acc + t.monto, 0);
 
   const gastos = transacciones
-    .filter(t => t.monto < 0)
+    .filter((t) => t.monto < 0)
     .reduce((acc, t) => acc + t.monto, 0);
 
-  const balance = ingresos + gastos;
-
-  // 🔎 Detectar banco vía API binlist
-  const detectarBancoAPI = async (numero: string) => {
-    if (numero.length < 6) return;
-    const bin = numero.slice(0, 6);
+  const handlePago = async () => {
+    if (montoPago <= 0) return alert('Ingrese un monto válido');
+    const deudaPendiente = transacciones.find((t) => t.tipo === 'deuda' && t.monto > 0);
+    if (!deudaPendiente) return alert('No hay deudas registradas');
 
     try {
-      const res = await fetch(`http://localhost:3001/binlookup/${bin}`);
-      if (!res.ok) return;
-
+      const id_deuda = deudaPendiente.id_deuda;
+      const res = await fetch('http://localhost:3001/pago', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id_deuda, monto: montoPago, tipoPago, conceptoPago }),
+      });
       const data = await res.json();
-      if (data.bank?.name) {
-        setBancoDetectado(data.bank.name);
-      } else {
-        setBancoDetectado("Banco desconocido");
-      }
-    } catch (err) {
-      console.error("Error consultando BIN:", err);
+      if (!data.success) throw new Error(data.error || 'Error registrando pago');
+
+      // 1️⃣ Actualizar tabla local
+      const nuevaTransaccion: Transaccion = {
+        fecha: new Date().toISOString(),
+        tipo: 'pago',
+        descripcion:
+          tipoPago === 'total'
+            ? `Pago total (${conceptoPago})`
+            : `Abono (${conceptoPago})`,
+        monto: -montoPago,
+        fecha_deuda: new Date(),
+        id_deuda,
+      };
+      setTransacciones((prev) => [nuevaTransaccion, ...prev]);
+
+      // 2️⃣ Actualizar deuda localmente
+      setTransacciones((prev) =>
+        prev.map((t) =>
+          t.id_deuda === id_deuda && t.tipo === 'deuda'
+            ? { ...t, monto: t.monto - montoPago }
+            : t
+        )
+      );
+
+      setMontoPago(0);
+      alert(`Pago de $${montoPago.toLocaleString()} registrado ✅`);
+    } catch (err: any) {
+      alert(err.message || 'Error al registrar pago');
     }
   };
 
@@ -101,7 +156,7 @@ const FinanzasAlumno = () => {
         <div className="finanzas-resumen">
           <div className="card ingreso">
             <h3>Deuda</h3>
-            <p>${ingresos.toLocaleString()}</p>
+            <p>${Math.abs(ingresos).toLocaleString()}</p>
           </div>
           <div className="card gasto">
             <h3>Gastos</h3>
@@ -116,31 +171,21 @@ const FinanzasAlumno = () => {
               type="date"
               id="desde"
               value={filtro.desde}
-              onChange={e => setFiltro({ ...filtro, desde: e.target.value })}
+              onChange={(e) => setFiltro({ ...filtro, desde: e.target.value })}
             />
             <label htmlFor="hasta">Hasta:</label>
             <input
               type="date"
               id="hasta"
               value={filtro.hasta}
-              onChange={e => setFiltro({ ...filtro, hasta: e.target.value })}
+              onChange={(e) => setFiltro({ ...filtro, hasta: e.target.value })}
             />
-            <button
-              className="btn-filtrar"
-              onClick={cargarTransacciones}
-              disabled={cargando}
-            >
+            <button className="btn-filtrar" onClick={cargarTransacciones} disabled={cargando}>
               {cargando ? 'Cargando...' : 'Filtrar'}
             </button>
           </div>
 
-          {/* Botón que abre el modal */}
-          <button
-            className="btn-pagar"
-            data-bs-toggle="modal"
-            data-bs-target="#modalPago"
-            onClick={() => setMontoPago(ingresos)} // se inicializa con la deuda pendiente
-          >
+          <button className="btn-pagar" onClick={() => setMontoPago(ingresos)}>
             Pagar deuda
           </button>
         </div>
@@ -167,7 +212,7 @@ const FinanzasAlumno = () => {
                     <td>{new Date(t.fecha_deuda).toLocaleDateString()}</td>
                     <td>{t.tipo}</td>
                     <td>{t.descripcion}</td>
-                    <td style={{ color: t.monto < 0 ? 'red' : 'green' }}>
+                    <td style={{ color: t.monto < 0 ? 'green' : 'red' }}>
                       {t.monto < 0 ? '-' : ''}${Math.abs(t.monto).toLocaleString()}
                     </td>
                   </tr>
@@ -178,133 +223,49 @@ const FinanzasAlumno = () => {
         </div>
       </div>
 
-      {/* Modal de Bootstrap */}
-      <div
-        className="modal fade"
-        id="modalPago"
-        tabIndex={-1}
-        aria-labelledby="modalPagoLabel"
-        aria-hidden="true"
-      >
-        <div className="modal-dialog">
-          <div className="modal-content">
-            <div className="modal-header">
-              <h5 className="modal-title" id="modalPagoLabel">
-                Realizar Pago
-              </h5>
-              <button
-                type="button"
-                className="btn-close"
-                data-bs-dismiss="modal"
-                aria-label="Cerrar"
-              ></button>
-            </div>
-
-            <div className="modal-body">
-              {/* Monto */}
-              <div className="mb-3">
-                <label className="form-label">Monto a pagar</label>
-                <input
-                  type="number"
-                  className="form-control"
-                  value={montoPago}
-                  onChange={e => setMontoPago(Number(e.target.value))}
-                />
+      {/* Modal de pago */}
+      {montoPago > 0 && (
+        <div className="modal fade show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Pagar deuda</h5>
+                <button type="button" className="btn-close" aria-label="Close" onClick={() => setMontoPago(0)}></button>
               </div>
+              <div className="modal-body">
+                <p>Alumno: <strong>{rut}</strong></p>
+                <p>Deuda total: ${Math.abs(ingresos).toLocaleString()}</p>
 
-              {/* Método de pago */}
-              <div className="mb-3">
-                <label className="form-label">Método de pago</label>
-                <select
-                  className="form-select"
-                  onChange={e => setMetodo(e.target.value)}
-                  value={metodo}
-                >
-                  <option value="tarjeta">Tarjeta de Crédito/Débito</option>
-                  <option value="transferencia">Transferencia Bancaria</option>
-                  <option value="efectivo">Efectivo</option>
-                </select>
-              </div>
+                <div className="mb-3">
+                  <label htmlFor="tipoPago" className="form-label">Tipo de pago</label>
+                  <select id="tipoPago" className="form-select" value={tipoPago} onChange={(e) => setTipoPago(e.target.value as 'total' | 'abono')}>
+                    <option value="total">Total</option>
+                    <option value="abono">Abono</option>
+                  </select>
+                </div>
 
-              {/* Campos dinámicos */}
-              {metodo === "tarjeta" && (
-                <div>
+                {tipoPago === 'abono' && (
                   <div className="mb-3">
-                    <label className="form-label">Número de tarjeta</label>
-                    <input
-                      type="text"
-                      className="form-control"
-                      placeholder="**** **** **** ****"
-                      value={numeroTarjeta}
-                      onChange={(e) => {
-                        const value = e.target.value.replace(/\D/g, "");
-                        setNumeroTarjeta(value);
-                        if (value.length >= 6) {
-                          detectarBancoAPI(value);
-                        } else {
-                          setBancoDetectado(null);
-                        }
-                      }}
-                    />
-                    {bancoDetectado && (
-                      <p className="text-success mt-2">
-                        Banco detectado: {bancoDetectado}
-                      </p>
-                    )}
+                    <label htmlFor="conceptoPago" className="form-label">Concepto de pago</label>
+                    <select id="conceptoPago" className="form-select" value={conceptoPago} onChange={(e) => setConceptoPago(e.target.value as 'matricula' | 'cursos')}>
+                      <option value="matricula">Matrícula</option>
+                      <option value="cursos">Cursos</option>
+                    </select>
+                    <label htmlFor="montoAbono" className="form-label mt-2">Monto abono</label>
+                    <input type="number" id="montoAbono" className="form-control" value={montoPago} onChange={(e) => setMontoPago(Number(e.target.value))} min={1} />
                   </div>
-                  <div className="row">
-                    <div className="col">
-                      <label className="form-label">Expira</label>
-                      <input type="text" className="form-control" placeholder="MM/AA" />
-                    </div>
-                    <div className="col">
-                      <label className="form-label">CVV</label>
-                      <input type="password" className="form-control" placeholder="***" />
-                    </div>
-                  </div>
-                </div>
-              )}
+                )}
 
-              {metodo === "transferencia" && (
-                <div className="mb-3">
-                  <p>
-                    Realiza la transferencia a: <br />
-                    <strong>Banco Ejemplo</strong> <br />
-                    N° Cuenta: <strong>123456789</strong> <br />
-                    Titular: <strong>Universidad XYZ</strong>
-                  </p>
-                </div>
-              )}
-
-              {metodo === "efectivo" && (
-                <div className="mb-3">
-                  <p>
-                    El pago en efectivo debe realizarse en la oficina de finanzas.  
-                    Horario: <strong>9:00 - 18:00</strong>.
-                  </p>
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <button
-                type="button"
-                className="btn btn-secondary"
-                data-bs-dismiss="modal"
-              >
-                Cancelar
-              </button>
-              <button
-                type="button"
-                className="btn btn-success"
-                data-bs-dismiss="modal"
-              >
-                Confirmar Pago
-              </button>
+                {tipoPago === 'total' && <p><strong>Concepto de pago:</strong> matrícula + cursos</p>}
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setMontoPago(0)}>Cancelar</button>
+                <button type="button" className="btn btn-success" onClick={handlePago}>Confirmar pago</button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

@@ -77,10 +77,10 @@ const AlumnoPortal = () => {
       .then(res => res.json())
       .then(data => {
         if (data.success && data.cursos) {
-          // Agregamos un URL ficticio para cada curso (reemplaza con el real)
+          // Usamos el URL de Ceforlav si existe
           const cursosConUrl = data.cursos.map((c: any) => ({
             ...c,
-            urlCeforlav: `https://cefrolav.cl/cursos/${c.id_curso || c.nombre_curso}`
+            urlCeforlav: c.url_ceforlav || null
           }));
           setCursos(cursosConUrl);
         } else {
@@ -175,7 +175,13 @@ const AlumnoPortal = () => {
                   <div
                     key={curso.id_curso || curso.nombre_curso}
                     className="card-curso"
-                    onClick={() => window.open('https://ceforlav.cl/aula', "_blank")}
+                    onClick={() => {
+                      if (curso.urlCeforlav) {
+                        window.open(curso.urlCeforlav, "_blank");
+                      } else {
+                        alert("Este curso aún no tiene un enlace en Ceforlav.");
+                      }
+                    }}
                   >
                     {curso.nombre_curso}
                   </div>
