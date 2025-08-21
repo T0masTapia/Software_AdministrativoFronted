@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import '../style/FinanzaAlum.css';
 import NavbarPag from '../components/NavbarPag';
 import { useAdmin } from '../context/AdminContext';
+import { jsPDF } from 'jspdf'; // <-- Importamos jsPDF
 
 interface Transaccion {
   fecha: string;
@@ -19,13 +20,16 @@ const FinanzasAlumno = () => {
   const [cargando, setCargando] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Estados para el modal estilo Admin
+  // Modal estilo Admin
   const [montoPago, setMontoPago] = useState<number>(0);
   const [tipoPago, setTipoPago] = useState<'total' | 'abono'>('total');
   const [conceptoPago, setConceptoPago] = useState<'matricula' | 'cursos'>('matricula');
 
-  // Estado para reflejar pagos de esta sesión
   const [pagosSesion, setPagosSesion] = useState(0);
+
+  // Modal de boleta
+  const [mostrarBoletaModal, setMostrarBoletaModal] = useState(false);
+  const [pagoReciente, setPagoReciente] = useState<Transaccion | null>(null);
 
   const cargarTransacciones = async () => {
     if (!rut) return;
@@ -90,7 +94,7 @@ const FinanzasAlumno = () => {
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Error registrando pago');
 
-      // Agregamos el pago a la tabla localmente
+      // Agregamos la transacción localmente
       const nuevaTransaccion: Transaccion = {
         fecha: new Date().toISOString(),
         tipo: "pago",
@@ -99,15 +103,35 @@ const FinanzasAlumno = () => {
           : `Abono (${conceptoPago})`,
         monto: -montoPago,
         fecha_deuda: new Date(),
+        id_deuda
       };
 
       setTransacciones(prev => [nuevaTransaccion, ...prev]);
-      setPagosSesion(prev => prev + montoPago); // Actualizamos deuda visual
+      setPagosSesion(prev => prev + montoPago);
       setMontoPago(0);
-      alert(`Pago de $${montoPago.toLocaleString()} registrado ✅`);
+
+      // Guardamos el pago reciente y abrimos modal de boleta
+      setPagoReciente(nuevaTransaccion);
+      setMostrarBoletaModal(true);
+
     } catch (err: any) {
       alert(err.message || "Error al registrar pago");
     }
+  };
+
+  // Función para generar PDF descargable
+  const descargarBoletaPDF = (rut: string, pago: Transaccion) => {
+    const doc = new jsPDF();
+    doc.setFontSize(16);
+    doc.text("Boleta de Pago", 105, 20, { align: "center" });
+
+    doc.setFontSize(12);
+    doc.text(`Alumno: ${rut}`, 20, 40);
+    doc.text(`Fecha: ${new Date(pago.fecha).toLocaleDateString()}`, 20, 50);
+    doc.text(`Concepto: ${pago.descripcion}`, 20, 60);
+    doc.text(`Monto: $${Math.abs(pago.monto).toLocaleString()}`, 20, 70);
+
+    doc.save(`Boleta_${rut}_${new Date().toISOString()}.pdf`);
   };
 
   return (
@@ -130,32 +154,15 @@ const FinanzasAlumno = () => {
         <div className="filtro-y-pago">
           <div className="filtro-fechas">
             <label htmlFor="desde">Desde:</label>
-            <input
-              type="date"
-              id="desde"
-              value={filtro.desde}
-              onChange={e => setFiltro({ ...filtro, desde: e.target.value })}
-            />
+            <input type="date" id="desde" value={filtro.desde} onChange={e => setFiltro({ ...filtro, desde: e.target.value })}/>
             <label htmlFor="hasta">Hasta:</label>
-            <input
-              type="date"
-              id="hasta"
-              value={filtro.hasta}
-              onChange={e => setFiltro({ ...filtro, hasta: e.target.value })}
-            />
-            <button
-              className="btn-filtrar"
-              onClick={cargarTransacciones}
-              disabled={cargando}
-            >
+            <input type="date" id="hasta" value={filtro.hasta} onChange={e => setFiltro({ ...filtro, hasta: e.target.value })}/>
+            <button className="btn-filtrar" onClick={cargarTransacciones} disabled={cargando}>
               {cargando ? 'Cargando...' : 'Filtrar'}
             </button>
           </div>
 
-          <button
-            className="btn-pagar"
-            onClick={() => setMontoPago(ingresos - pagosSesion)}
-          >
+          <button className="btn-pagar" onClick={() => setMontoPago(ingresos - pagosSesion)}>
             Pagar deuda
           </button>
         </div>
@@ -193,25 +200,14 @@ const FinanzasAlumno = () => {
         </div>
       </div>
 
-      {/* Modal de pago estilo Admin */}
+      {/* Modal de pago */}
       {montoPago > 0 && (
-        <div
-          className="modal fade show"
-          style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}
-          tabIndex={-1}
-          role="dialog"
-          aria-modal="true"
-        >
+        <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true">
           <div className="modal-dialog" role="document">
             <div className="modal-content">
               <div className="modal-header">
                 <h5 className="modal-title">Pagar deuda</h5>
-                <button
-                  type="button"
-                  className="btn-close"
-                  aria-label="Close"
-                  onClick={() => setMontoPago(0)}
-                ></button>
+                <button type="button" className="btn-close" onClick={() => setMontoPago(0)}></button>
               </div>
               <div className="modal-body">
                 <p>Alumno: <strong>{rut}</strong></p>
@@ -219,12 +215,7 @@ const FinanzasAlumno = () => {
 
                 <div className="mb-3">
                   <label htmlFor="tipoPago" className="form-label">Tipo de pago</label>
-                  <select
-                    id="tipoPago"
-                    className="form-select"
-                    value={tipoPago}
-                    onChange={e => setTipoPago(e.target.value as 'total' | 'abono')}
-                  >
+                  <select id="tipoPago" className="form-select" value={tipoPago} onChange={e => setTipoPago(e.target.value as 'total' | 'abono')}>
                     <option value="total">Total</option>
                     <option value="abono">Abono</option>
                   </select>
@@ -233,47 +224,45 @@ const FinanzasAlumno = () => {
                 {tipoPago === 'abono' && (
                   <div className="mb-3">
                     <label htmlFor="conceptoPago" className="form-label">Concepto de pago</label>
-                    <select
-                      id="conceptoPago"
-                      className="form-select"
-                      value={conceptoPago}
-                      onChange={e => setConceptoPago(e.target.value as 'matricula' | 'cursos')}
-                    >
+                    <select id="conceptoPago" className="form-select" value={conceptoPago} onChange={e => setConceptoPago(e.target.value as 'matricula' | 'cursos')}>
                       <option value="matricula">Matrícula</option>
                       <option value="cursos">Cursos</option>
                     </select>
 
                     <label htmlFor="montoAbono" className="form-label mt-2">Monto abono</label>
-                    <input
-                      type="number"
-                      id="montoAbono"
-                      className="form-control"
-                      value={montoPago}
-                      onChange={e => setMontoPago(Number(e.target.value))}
-                      min={1}
-                    />
+                    <input type="number" id="montoAbono" className="form-control" value={montoPago} onChange={e => setMontoPago(Number(e.target.value))} min={1} />
                   </div>
                 )}
 
-                {tipoPago === 'total' && (
-                  <p><strong>Concepto de pago:</strong> matrícula + cursos</p>
-                )}
+                {tipoPago === 'total' && <p><strong>Concepto de pago:</strong> matrícula + cursos</p>}
               </div>
               <div className="modal-footer">
-                <button
-                  type="button"
-                  className="btn btn-secondary"
-                  onClick={() => setMontoPago(0)}
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-success"
-                  onClick={handlePago}
-                >
-                  Confirmar pago
-                </button>
+                <button type="button" className="btn btn-secondary" onClick={() => setMontoPago(0)}>Cancelar</button>
+                <button type="button" className="btn btn-success" onClick={handlePago}>Confirmar pago</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal Boleta */}
+      {mostrarBoletaModal && pagoReciente && (
+        <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true">
+          <div className="modal-dialog" role="document">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Descargar boleta</h5>
+                <button type="button" className="btn-close" onClick={() => setMostrarBoletaModal(false)}></button>
+              </div>
+              <div className="modal-body">
+                <p>¿Deseas descargar el comprobante de este pago?</p>
+                <p><strong>Monto:</strong> ${Math.abs(pagoReciente.monto).toLocaleString()}</p>
+                <p><strong>Concepto:</strong> {pagoReciente.descripcion}</p>
+                <p><strong>Fecha:</strong> {new Date(pagoReciente.fecha).toLocaleDateString()}</p>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn btn-secondary" onClick={() => setMostrarBoletaModal(false)}>No</button>
+                <button type="button" className="btn btn-primary" onClick={() => { descargarBoletaPDF(rut, pagoReciente); setMostrarBoletaModal(false); }}>Sí, descargar PDF</button>
               </div>
             </div>
           </div>
