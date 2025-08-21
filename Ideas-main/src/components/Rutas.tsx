@@ -7,8 +7,10 @@ import MatriculaA from "../pages/Matricula";
 import { AdminProvider } from "../context/AdminContext";
 import CrearU from "../pages/CrearU";
 import FinanzasViews from "./FinanzasViews";
-import PrivateRoute from "../components/PrivateRoute";  
+import PrivateRoute from "../components/PrivateRoute";
 import CursosCrear from "../pages/Cursos";
+import NuevoTipoUsuario from "../pages/IngresarTU";
+import Becas from "../pages/Becas";
 
 export default function Rutas() {
   return (
@@ -17,13 +19,13 @@ export default function Rutas() {
         {/* Ruta pública */}
         <Route path="/login" element={<Login />} />
 
-        <Route 
-        path="/" 
-        element={
-          <PrivateRoute>
-            <Home />
-          </PrivateRoute>
-        } />
+        <Route
+          path="/"
+          element={
+            <PrivateRoute>
+              <Home />
+            </PrivateRoute>
+          } />
 
         {/* Rutas protegidas */}
         <Route
@@ -71,6 +73,22 @@ export default function Rutas() {
           element={
             <PrivateRoute>
               <CursosCrear />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/nuevo-tipo-usuario"
+          element={
+            <PrivateRoute>
+              <NuevoTipoUsuario />
+            </PrivateRoute>
+          }
+        />
+        <Route
+          path="/becas"
+          element={
+            <PrivateRoute>
+              <Becas />
             </PrivateRoute>
           }
         />

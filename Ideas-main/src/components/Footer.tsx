@@ -1,7 +1,7 @@
 const Footer = () => {
   return (
     <footer>
-      &copy; 2025 EduControl - Todos los derechos reservados
+      &copy; 2025 AulaConnect - Todos los derechos reservados
     </footer>
   );
 };

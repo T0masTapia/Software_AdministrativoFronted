@@ -14,7 +14,7 @@ export default function Header() {
     <header>
       <div className="header-left">
         <img src="/image/educamadrid.2.png" alt="Logo EduControl" className="logo" />
-        EduControl
+        AulaConnect
       </div>
       <div className="header-right">
         <span>Sistema de Gestión Académica</span>

@@ -112,6 +112,52 @@ export default function CrearU() {
         }
     };
 
+    // Eliminar alumno
+    const handleEliminar = async (rut: string) => {
+        if (!confirm('¿Seguro que deseas eliminar este alumno?')) return;
+
+        try {
+            const res = await fetch(`http://localhost:3001/alumnos/${rut}`, {
+                method: 'DELETE',
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAlumnos(alumnos.filter(a => a.rut !== rut));
+                alert('Alumno eliminado correctamente');
+            } else {
+                alert('Error al eliminar: ' + data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión al eliminar alumno');
+        }
+    };
+
+    // Editar alumno (PATCH)
+    const handleEditar = async (rut: string) => {
+        const nuevoNombre = prompt('Nuevo nombre:');
+        if (!nuevoNombre) return;
+
+        try {
+            const res = await fetch(`http://localhost:3001/alumnos/${rut}`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nombre: nuevoNombre }),
+            });
+            const data = await res.json();
+            if (data.success) {
+                setAlumnos(alumnos.map(a => a.rut === rut ? { ...a, nombre: nuevoNombre } : a));
+                alert('Alumno actualizado correctamente');
+            } else {
+                alert('Error al actualizar: ' + data.error);
+            }
+        } catch (error) {
+            console.error(error);
+            alert('Error de conexión al actualizar alumno');
+        }
+    };
+
+
     const alumnosFiltrados = alumnos.filter((alumno) =>
         (alumno.nombre ?? '').toLowerCase().includes(filtroNombre.toLowerCase()) ||
         (alumno.rut ?? '').toLowerCase().includes(filtroNombre.toLowerCase())
@@ -281,6 +327,7 @@ export default function CrearU() {
                                 <th>Contacto</th>
                                 <th>Comuna</th>
                                 <th>Correo</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -291,16 +338,80 @@ export default function CrearU() {
                                     <td>{alumno.fono}</td>
                                     <td>{alumno.direccion}</td>
                                     <td>{alumno.correo}</td>
-                                </tr>
-                            ))}
-                            {alumnosFiltrados.length === 0 && (
-                                <tr>
-                                    <td colSpan={5} style={{ textAlign: 'center' }}>
-                                        No se encontraron alumnos
+                                    <td>
+                                        <div className="d-flex gap-2">
+                                            {/* Botón Editar */}
+                                            <button
+                                                className="btn btn-outline-primary btn-sm"
+                                                onClick={async () => {
+                                                    // Pedir nuevos valores
+                                                    const nuevoNombre = prompt('Nuevo nombre:', alumno.nombre);
+                                                    const nuevoFono = prompt('Nuevo fono:', alumno.fono);
+                                                    const nuevaDireccion = prompt('Nueva dirección:', alumno.direccion);
+                                                    const nuevoCorreo = prompt('Nuevo correo:', alumno.correo);
+
+                                                    // Crear objeto solo con campos que se cambiaron
+                                                    const body: any = {};
+                                                    if (nuevoNombre && nuevoNombre !== alumno.nombre) body.nombre = nuevoNombre;
+                                                    if (nuevoFono && nuevoFono !== alumno.fono) body.fono = nuevoFono;
+                                                    if (nuevaDireccion && nuevaDireccion !== alumno.direccion) body.direccion = nuevaDireccion;
+                                                    if (nuevoCorreo && nuevoCorreo !== alumno.correo) body.correo = nuevoCorreo;
+
+                                                    if (Object.keys(body).length === 0) return alert('No se hicieron cambios');
+
+                                                    try {
+                                                        const res = await fetch(`http://localhost:3001/alumnos/${alumno.rut}`, {
+                                                            method: 'PATCH',
+                                                            headers: { 'Content-Type': 'application/json' },
+                                                            body: JSON.stringify(body),
+                                                        });
+                                                        const data = await res.json();
+                                                        if (data.success) {
+                                                            alert('Alumno actualizado correctamente');
+                                                            // Actualizar estado local para reflejar cambios
+                                                            setAlumnos(prev => prev.map(a => a.rut === alumno.rut ? { ...a, ...body } : a));
+                                                        } else {
+                                                            alert('Error: ' + data.error);
+                                                        }
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                        alert('Error de conexión con el backend');
+                                                    }
+                                                }}
+                                                title="Editar alumno"
+                                            >
+                                                ✏️
+                                            </button>
+
+                                            {/* Botón Eliminar */}
+                                            <button
+                                                className="btn btn-outline-danger btn-sm"
+                                                onClick={async () => {
+                                                    if (!confirm('¿Seguro que deseas eliminar este alumno?')) return;
+                                                    try {
+                                                        const res = await fetch(`http://localhost:3001/alumnos/${alumno.rut}`, { method: 'DELETE' });
+                                                        const data = await res.json();
+                                                        if (data.success) {
+                                                            alert('Alumno eliminado');
+                                                            setAlumnos(prev => prev.filter(a => a.rut !== alumno.rut));
+                                                        } else {
+                                                            alert('Error: ' + data.error);
+                                                        }
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                        alert('Error de conexión con el backend');
+                                                    }
+                                                }}
+                                                title="Eliminar alumno"
+                                            >
+                                                🗑
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
-                            )}
+                            ))}
                         </tbody>
+
                     </table>
                 </div>
             </div>

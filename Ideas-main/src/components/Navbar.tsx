@@ -21,6 +21,7 @@ export default function Navbar() {
             <div className="dropdown-content">
               <Link to="/crear-usuario">Crear Usuario</Link>
               <Link to="/matricula-alumno">Matricular Alumno</Link>
+              <Link to="/nuevo-tipo-usuario">Añadir Tipo de Usuario</Link>
             </div>
           )}
         </div>
@@ -28,7 +29,10 @@ export default function Navbar() {
 
       {/* Admin y Alumno pueden ver Finanzas */}
       {(tipoUsuario === 'admi' || tipoUsuario === 'alumno') && (
-        <Link to="/finanzas">Finanzas</Link>
+        <>
+          <Link to="/finanzas">Finanzas</Link>
+          <Link to="/becas">Becas</Link>
+        </>
       )}
 
       {/* Solo Admin */}

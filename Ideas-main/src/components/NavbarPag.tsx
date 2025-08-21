@@ -25,7 +25,10 @@ export default function NavbarPag() {
         )}
 
         {(tipoUsuario === 'admi' || tipoUsuario === 'alumno') && (
+          <>
           <NavLink to="/finanzas" className="nav-link">Finanzas</NavLink>
+          <NavLink to="/becas" className="nav-link">Becas</NavLink>
+          </>
         )}
 
         {tipoUsuario === 'alumno' && (

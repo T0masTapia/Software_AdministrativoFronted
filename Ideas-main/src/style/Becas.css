@@ -1,0 +1,17 @@
+/* Becas.css */
+.beca-card {
+  border-radius: 15px;
+  transition: transform 0.2s ease-in-out;
+}
+
+.beca-card:hover {
+  transform: translateY(-5px);
+}
+
+.beca-card h5 {
+  color: #0d6efd; /* azul bootstrap */
+}
+
+.beca-card .btn {
+  font-weight: bold;
+}
