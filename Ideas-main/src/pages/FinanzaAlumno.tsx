@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import '../style/FinanzaAlum.css';
 import NavbarPag from '../components/NavbarPag';
 import { useAdmin } from '../context/AdminContext';
-import { jsPDF } from 'jspdf'; // <-- Importamos jsPDF
 
 interface Transaccion {
   fecha: string;
@@ -26,10 +25,6 @@ const FinanzasAlumno = () => {
   const [conceptoPago, setConceptoPago] = useState<'matricula' | 'cursos'>('matricula');
 
   const [pagosSesion, setPagosSesion] = useState(0);
-
-  // Modal de boleta
-  const [mostrarBoletaModal, setMostrarBoletaModal] = useState(false);
-  const [pagoReciente, setPagoReciente] = useState<Transaccion | null>(null);
 
   const cargarTransacciones = async () => {
     if (!rut) return;
@@ -110,28 +105,9 @@ const FinanzasAlumno = () => {
       setPagosSesion(prev => prev + montoPago);
       setMontoPago(0);
 
-      // Guardamos el pago reciente y abrimos modal de boleta
-      setPagoReciente(nuevaTransaccion);
-      setMostrarBoletaModal(true);
-
     } catch (err: any) {
       alert(err.message || "Error al registrar pago");
     }
-  };
-
-  // Función para generar PDF descargable
-  const descargarBoletaPDF = (rut: string, pago: Transaccion) => {
-    const doc = new jsPDF();
-    doc.setFontSize(16);
-    doc.text("Boleta de Pago", 105, 20, { align: "center" });
-
-    doc.setFontSize(12);
-    doc.text(`Alumno: ${rut}`, 20, 40);
-    doc.text(`Fecha: ${new Date(pago.fecha).toLocaleDateString()}`, 20, 50);
-    doc.text(`Concepto: ${pago.descripcion}`, 20, 60);
-    doc.text(`Monto: $${Math.abs(pago.monto).toLocaleString()}`, 20, 70);
-
-    doc.save(`Boleta_${rut}_${new Date().toISOString()}.pdf`);
   };
 
   return (
@@ -239,30 +215,6 @@ const FinanzasAlumno = () => {
               <div className="modal-footer">
                 <button type="button" className="btn btn-secondary" onClick={() => setMontoPago(0)}>Cancelar</button>
                 <button type="button" className="btn btn-success" onClick={handlePago}>Confirmar pago</button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Modal Boleta */}
-      {mostrarBoletaModal && pagoReciente && (
-        <div className="modal fade show d-block" tabIndex={-1} role="dialog" aria-modal="true">
-          <div className="modal-dialog" role="document">
-            <div className="modal-content">
-              <div className="modal-header">
-                <h5 className="modal-title">Descargar boleta</h5>
-                <button type="button" className="btn-close" onClick={() => setMostrarBoletaModal(false)}></button>
-              </div>
-              <div className="modal-body">
-                <p>¿Deseas descargar el comprobante de este pago?</p>
-                <p><strong>Monto:</strong> ${Math.abs(pagoReciente.monto).toLocaleString()}</p>
-                <p><strong>Concepto:</strong> {pagoReciente.descripcion}</p>
-                <p><strong>Fecha:</strong> {new Date(pagoReciente.fecha).toLocaleDateString()}</p>
-              </div>
-              <div className="modal-footer">
-                <button type="button" className="btn btn-secondary" onClick={() => setMostrarBoletaModal(false)}>No</button>
-                <button type="button" className="btn btn-primary" onClick={() => { descargarBoletaPDF(rut, pagoReciente); setMostrarBoletaModal(false); }}>Sí, descargar PDF</button>
               </div>
             </div>
           </div>
