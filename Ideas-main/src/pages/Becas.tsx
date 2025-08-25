@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import NavbarPag from "../components/NavbarPag";
 import BecaCard from "../components/BecaCard";
 import BecaDetalle from "../components/BecaDetalle";
+import { useAdmin } from "../context/AdminContext"; // 👈 Importa el contexto
 import "../style/Becas.css";
 
 type Beca = {
@@ -25,6 +26,9 @@ export default function Becas() {
     const [fechaFin, setFechaFin] = useState("");
     const [criterios, setCriterios] = useState("");
     const [image, setImage] = useState("");
+
+    // 👇 obtenemos el rol desde el contexto
+    const { tipoUsuario } = useAdmin(); // asumimos que viene algo como "admin" | "alumno"
 
     // Cargar becas desde el backend
     useEffect(() => {
@@ -92,73 +96,74 @@ export default function Becas() {
                     ))}
                 </div>
 
-
-                {/* Formulario para crear nuevas becas */}
-                <div className="card shadow p-4">
-                    <h3 className="mb-4">Crear Nueva Beca</h3>
-                    <form onSubmit={handleCrearBeca}>
-                        <div className="mb-3">
-                            <label className="form-label">Nombre Beca</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={nombre}
-                                onChange={(e) => setNombre(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">Monto Descuento</label>
-                            <input
-                                type="number"
-                                className="form-control"
-                                value={monto}
-                                onChange={(e) => setMonto(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">Fecha Inicio</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                value={fechaInicio}
-                                onChange={(e) => setFechaInicio(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">Fecha Fin</label>
-                            <input
-                                type="date"
-                                className="form-control"
-                                value={fechaFin}
-                                onChange={(e) => setFechaFin(e.target.value)}
-                                required
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">Criterios</label>
-                            <textarea
-                                className="form-control"
-                                value={criterios}
-                                onChange={(e) => setCriterios(e.target.value)}
-                            />
-                        </div>
-                        <div className="mb-3">
-                            <label className="form-label">Imagen (URL)</label>
-                            <input
-                                type="text"
-                                className="form-control"
-                                value={image}
-                                onChange={(e) => setImage(e.target.value)}
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-success">
-                            Crear Beca
-                        </button>
-                    </form>
-                </div>
+                {/* Formulario solo visible si es ADMIN */}
+                {tipoUsuario === "admi" && (
+                    <div className="card shadow p-4">
+                        <h3 className="mb-4">Crear Nueva Beca</h3>
+                        <form onSubmit={handleCrearBeca}>
+                            <div className="mb-3">
+                                <label className="form-label">Nombre Beca</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={nombre}
+                                    onChange={(e) => setNombre(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Monto Descuento</label>
+                                <input
+                                    type="number"
+                                    className="form-control"
+                                    value={monto}
+                                    onChange={(e) => setMonto(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Fecha Inicio</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={fechaInicio}
+                                    onChange={(e) => setFechaInicio(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Fecha Fin</label>
+                                <input
+                                    type="date"
+                                    className="form-control"
+                                    value={fechaFin}
+                                    onChange={(e) => setFechaFin(e.target.value)}
+                                    required
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Criterios</label>
+                                <textarea
+                                    className="form-control"
+                                    value={criterios}
+                                    onChange={(e) => setCriterios(e.target.value)}
+                                />
+                            </div>
+                            <div className="mb-3">
+                                <label className="form-label">Imagen (URL)</label>
+                                <input
+                                    type="text"
+                                    className="form-control"
+                                    value={image}
+                                    onChange={(e) => setImage(e.target.value)}
+                                />
+                            </div>
+                            <button type="submit" className="btn btn-success">
+                                Crear Beca
+                            </button>
+                        </form>
+                    </div>
+                )}
             </div>
         </>
     );

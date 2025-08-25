@@ -5,7 +5,7 @@ import {
   ResponsiveContainer, PieChart, Pie, Cell, Legend
 } from 'recharts';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faUser, faIdCard, faEnvelope, faLock, faKey, faClipboardList } from '@fortawesome/free-solid-svg-icons';
+import { faUser, faKey, faClipboardList } from '@fortawesome/free-solid-svg-icons';
 import NavbarPag from '../components/NavbarPag';
 import { useAdmin } from '../context/AdminContext';
 
@@ -14,17 +14,16 @@ const COLORS = ['#4caf50', '#f44336', '#2196f3']; // verde, rojo, azul
 const AlumnoPortal = () => {
   const { rut, idUsuario } = useAdmin();
 
-  const [alumno, setAlumno] = useState<{
-    nombre_completo: string;
-    rut: string;
-    correo: string;
-  } | null>(null);
-
-  const [cursos, setCursos] = useState<Array<{ nombre_curso: string; id_curso?: string | number; urlCeforlav?: string }>>([]);
+  const [alumno, setAlumno] = useState<{ nombre_completo: string; rut: string; correo: string } | null>(null);
+  const [cursos, setCursos] = useState<Array<{ nombre_curso: string; id_curso?: string | number; urlCeforlav?: string; deuda_pendiente?: boolean }>>([]);
   const [deuda, setDeuda] = useState(0);
 
-  const [asistenciaData, setAsistenciaData] = useState<Array<any>>([]);
-  const [pieData, setPieData] = useState<Array<any>>([]);
+  const [asistenciaData, setAsistenciaData] = useState<any[]>([]);
+  const [pieData, setPieData] = useState<any[]>([]);
+  const [pieDataCurso, setPieDataCurso] = useState<any[]>([]);
+  const [dataAsistenciaGlobal, setDataAsistenciaGlobal] = useState<any[]>([]);
+
+  const [cursoSeleccionado, setCursoSeleccionado] = useState<string | number>('');
 
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +38,8 @@ const AlumnoPortal = () => {
   // --- Obtener datos del alumno y cursos ---
   useEffect(() => {
     if (!rut) return;
-
     setLoading(true);
 
-    // Datos del alumno
     fetch(`http://localhost:3001/alumnos/${rut}`)
       .then(res => res.json())
       .then(data => {
@@ -57,14 +54,14 @@ const AlumnoPortal = () => {
       .catch(() => setError("Error al obtener datos"))
       .finally(() => setLoading(false));
 
-    // Cursos del alumno
     fetch(`http://localhost:3001/alumnoCurso/cursos/${rut}`)
       .then(res => res.json())
       .then(data => {
         if (data.success && data.cursos) {
           setCursos(data.cursos.map((c: any) => ({
             ...c,
-            urlCeforlav: c.url_aula || null
+            urlCeforlav: c.url_aula || null,
+            deuda_pendiente: c.deuda_pendiente || false
           })));
         } else {
           setCursos([]);
@@ -75,62 +72,96 @@ const AlumnoPortal = () => {
 
   // --- Obtener asistencia del alumno ---
   useEffect(() => {
-  if (!rut) return;
+    if (!rut) return;
 
-  fetch(`http://localhost:3001/asistencia/toda`)
-    .then(res => res.json())
-    .then(data => {
-      console.log("Datos de asistencia:", data.asistencia);
-      if (data.success && data.asistencia) {
-        // Filtrar solo asistencias del alumno logeado
-        const alumnoAsistencia = data.asistencia.filter((a: any) => a.rut === rut);
+    fetch(`http://localhost:3001/asistencia/toda`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.success && data.asistencia) {
+          const alumnoAsistencia = data.asistencia.filter((a: any) => a.rut === rut);
+          setDataAsistenciaGlobal(alumnoAsistencia);
 
-        // Función para mapear estados del backend a tu lógica
-        const mapEstado = (estado: string) => {
-          switch(estado) {
-            case 'Presente': return 'A';
-            case 'Ausente': return 'I';
-            case 'Justificado': return 'J';
-            default: return 'S';
+          if (alumnoAsistencia.length === 0) {
+            setAsistenciaData([]);
+            setPieData([]);
+            setPieDataCurso([]);
+            return;
           }
-        };
 
-        // Agrupar por mes
-        const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
-        const asistenciaPorMes = meses.map((mes, idx) => {
-          const filtrado = alumnoAsistencia.filter(a => {
-            const fecha = a.fecha ? new Date(a.fecha) : null;
-            return fecha?.getMonth() === idx;
+          const mapEstado = (estado: string) => {
+            switch (estado) {
+              case 'Presente': return 'A';
+              case 'Ausente': return 'I';
+              case 'Justificado': return 'J';
+              default: return 'S';
+            }
+          };
+
+          const meses = ["Ene","Feb","Mar","Abr","May","Jun","Jul","Ago","Sep","Oct","Nov","Dic"];
+          const asistenciaPorMes = meses.map((mes, idx) => {
+            const filtrado = alumnoAsistencia.filter((a: { fecha: string | number | Date; }) => {
+              const fecha = a.fecha ? new Date(a.fecha) : null;
+              return fecha?.getMonth() === idx;
+            });
+            const asistencia = filtrado.filter((a: { estado: string; }) => mapEstado(a.estado) === 'A').length;
+            const inasistencia = filtrado.filter((a: { estado: string; }) => mapEstado(a.estado) === 'I').length;
+            const justificado = filtrado.filter((a: { estado: string; }) => mapEstado(a.estado) === 'J').length;
+            return { mes, asistencia, inasistencia, justificado };
           });
 
-          const asistencia = filtrado.filter(a => mapEstado(a.estado) === 'A').length;
-          const inasistencia = filtrado.filter(a => mapEstado(a.estado) === 'I').length;
-          const justificado = filtrado.filter(a => mapEstado(a.estado) === 'J').length;
+          setAsistenciaData(asistenciaPorMes);
 
-          return { mes, asistencia, inasistencia, justificado };
-        });
+          const totalA = alumnoAsistencia.filter((a: { estado: string; }) => mapEstado(a.estado) === 'A').length;
+          const totalI = alumnoAsistencia.filter((a: { estado: string; }) => mapEstado(a.estado) === 'I').length;
+          const totalJ = alumnoAsistencia.filter((a: { estado: string; }) => mapEstado(a.estado) === 'J').length;
+          const total = totalA + totalI + totalJ || 1;
 
-        setAsistenciaData(asistenciaPorMes);
+          const pieGlobal = [
+            { name: 'Asistencia', value: Math.round((totalA / total) * 100) },
+            { name: 'Inasistencia', value: Math.round((totalI / total) * 100) },
+            { name: 'Justificado', value: Math.round((totalJ / total) * 100) },
+          ];
 
-        // Totales para gráfico de pastel
-        const totalA = alumnoAsistencia.filter(a => mapEstado(a.estado) === 'A').length;
-        const totalI = alumnoAsistencia.filter(a => mapEstado(a.estado) === 'I').length;
-        const totalJ = alumnoAsistencia.filter(a => mapEstado(a.estado) === 'J').length;
+          setPieData(pieGlobal);
+          setPieDataCurso(pieGlobal);
+        }
+      })
+      .catch(() => {
+        setAsistenciaData([]);
+        setPieData([]);
+        setPieDataCurso([]);
+      });
+  }, [rut]);
 
-        const total = totalA + totalI + totalJ || 1; // evitar división por 0
-        setPieData([
-          { name: 'Asistencia', value: Math.round((totalA / total) * 100) },
-          { name: 'Inasistencia', value: Math.round((totalI / total) * 100) },
-          { name: 'Justificado', value: Math.round((totalJ / total) * 100) },
-        ]);
+  // --- Filtrar por curso ---
+  useEffect(() => {
+    if (!cursoSeleccionado) {
+      setPieDataCurso(pieData);
+      return;
+    }
+
+    const idCursoNum = Number(cursoSeleccionado);
+    const alumnoAsistenciaCurso = dataAsistenciaGlobal.filter(a => a.id_curso === idCursoNum);
+    const mapEstado = (estado: string) => {
+      switch (estado) {
+        case 'Presente': return 'A';
+        case 'Ausente': return 'I';
+        case 'Justificado': return 'J';
+        default: return 'S';
       }
-    })
-    .catch(() => {
-      setAsistenciaData([]);
-      setPieData([]);
-    });
-}, [rut]);
+    };
 
+    const totalA = alumnoAsistenciaCurso.filter(a => mapEstado(a.estado) === 'A').length;
+    const totalI = alumnoAsistenciaCurso.filter(a => mapEstado(a.estado) === 'I').length;
+    const totalJ = alumnoAsistenciaCurso.filter(a => mapEstado(a.estado) === 'J').length;
+    const total = totalA + totalI + totalJ || 1;
+
+    setPieDataCurso([
+      { name: 'Asistencia', value: Math.round((totalA / total) * 100) },
+      { name: 'Inasistencia', value: Math.round((totalI / total) * 100) },
+      { name: 'Justificado', value: Math.round((totalJ / total) * 100) },
+    ]);
+  }, [cursoSeleccionado, dataAsistenciaGlobal, pieData]);
 
   // --- Cambiar contraseña ---
   const handleChangePassword = () => {
@@ -194,8 +225,14 @@ const AlumnoPortal = () => {
             {cursos.length === 0 ? <p>No estás inscrito en ningún curso.</p> : (
               <div className="cursos-cards">
                 {cursos.map((curso) => (
-                  <div key={curso.id_curso || curso.nombre_curso} className="card-curso"
+                  <div
+                    key={curso.id_curso || curso.nombre_curso}
+                    className={`card-curso ${curso.deuda_pendiente ? 'curso-bloqueado' : ''}`}
                     onClick={() => {
+                      if (curso.deuda_pendiente) {
+                        alert("No puedes acceder a este curso porque tu matrícula tiene deuda pendiente.");
+                        return;
+                      }
                       if (curso.urlCeforlav) window.open(curso.urlCeforlav, "_blank");
                       else alert("Este curso aún no tiene un enlace en Aula.");
                     }}
@@ -211,33 +248,55 @@ const AlumnoPortal = () => {
         {/* Panel derecho: Asistencia */}
         <div className="right-panel card">
           <h3><FontAwesomeIcon icon={faClipboardList} /> Resumen de Asistencia</h3>
+          {pieDataCurso.length === 0 ? (
+            <p className="text-center" style={{ marginTop: "20px" }}>Aún no se ha registrado la asistencia.</p>
+          ) : (
+            <>
+              {/* Dropdown de cursos */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '10px' }}>
+                <label>Selecciona un curso:</label>
+                <select
+                  value={cursoSeleccionado}
+                  onChange={e => setCursoSeleccionado(e.target.value)}
+                  className="form-select"
+                >
+                  <option value="">Todos</option>
+                  {cursos.map(curso => (
+                    <option key={curso.id_curso} value={curso.id_curso}>{curso.nombre_curso}</option>
+                  ))}
+                </select>
+              </div>
 
-          <div className="grafico-torta" style={{ marginTop: 10 }}>
-            <ResponsiveContainer width="100%" height={250}>
-              <PieChart>
-                <Pie data={pieData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                  {pieData.map((_entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index]} />))}
-                </Pie>
-                <Legend />
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+              {/* Gráfico de torta */}
+              <div className="grafico-torta" style={{ marginTop: 10 }}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <PieChart>
+                    <Pie data={pieDataCurso} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                      {pieDataCurso.map((_entry, index) => (<Cell key={`cell-${index}`} fill={COLORS[index]} />))}
+                    </Pie>
+                    <Legend />
+                    <Tooltip />
+                  </PieChart>
+                </ResponsiveContainer>
+              </div>
 
-          <h4 style={{ marginTop: '30px' }}><FontAwesomeIcon icon={faClipboardList} /> Asistencia Mensual</h4>
-          <div className="grafico-barras" style={{ marginTop: 10 }}>
-            <ResponsiveContainer width="100%" height={250}>
-              <BarChart data={asistenciaData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="mes" />
-                <YAxis unit="%" domain={[0, 100]} />
-                <Tooltip />
-                <Bar dataKey="asistencia" stackId="a" fill="#4caf50" name="Asistencia" />
-                <Bar dataKey="inasistencia" stackId="a" fill="#f44336" name="Inasistencia" />
-                <Bar dataKey="justificado" stackId="a" fill="#2196f3" name="Justificado" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+              {/* Gráfico de barras */}
+              <h4 style={{ marginTop: '30px' }}><FontAwesomeIcon icon={faClipboardList} /> Asistencia Mensual</h4>
+              <div className="grafico-barras" style={{ marginTop: 10 }}>
+                <ResponsiveContainer width="100%" height={250}>
+                  <BarChart data={asistenciaData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="mes" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="asistencia" stackId="a" fill="#4caf50" name="Asistencia" />
+                    <Bar dataKey="inasistencia" stackId="a" fill="#f44336" name="Inasistencia" />
+                    <Bar dataKey="justificado" stackId="a" fill="#2196f3" name="Justificado" />
+                  </BarChart>
+                </ResponsiveContainer>
+              </div>
+            </>
+          )}
         </div>
       </div>
 

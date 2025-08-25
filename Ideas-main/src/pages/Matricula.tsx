@@ -21,7 +21,7 @@ export default function Matricula() {
     }, []);
 
     useEffect(() => {
-        fetch('http://localhost:3001/alumnoCurso') // Ajusta la URL si es necesario
+        fetch('http://localhost:3001/alumnoCurso')
             .then(res => res.json())
             .then(data => {
                 if (data.success) {
@@ -33,7 +33,6 @@ export default function Matricula() {
             .catch(err => console.error('Error al cargar alumnos matriculados:', err));
     }, []);
 
-    // Autocompletar: Buscar sugerencias por rut mientras se escribe
     useEffect(() => {
         if (rut.length >= 3) {
             fetch(`http://localhost:3001/alumnos/buscar?rut=${rut}`)
@@ -52,7 +51,6 @@ export default function Matricula() {
         }
     }, [rut]);
 
-    // Cuando se selecciona una sugerencia
     const seleccionarSugerencia = (alumno: any) => {
         setRut(alumno.rut);
         setNombreCompleto(alumno.nombre_completo);
@@ -62,19 +60,12 @@ export default function Matricula() {
 
     const validar = () => {
         const nuevosErrores: { [key: string]: string } = {};
-
         if (!rut || rut.length < 9) {
             nuevosErrores.rut = 'RUT inválido (mínimo 9 caracteres)';
         }
-
         if (!cursoSeleccionado) {
             nuevosErrores.curso = 'Debe seleccionar un curso';
         }
-
-        // if (!nombreCompleto) {
-        //     nuevosErrores.rut = 'RUT no registrado en la base de datos';
-        // }
-
         setErrores(nuevosErrores);
         return Object.keys(nuevosErrores).length === 0;
     };
@@ -83,7 +74,6 @@ export default function Matricula() {
         e.preventDefault();
         if (!validar()) return;
 
-        // VALIDACIÓN: Evitar matricular mismo alumno en mismo curso
         const nombreCurso = cursos.find(c => c.id_curso === parseInt(cursoSeleccionado))?.nombre_curso || '';
 
         const yaMatriculado = alumnos.some(
@@ -98,9 +88,7 @@ export default function Matricula() {
         try {
             const response = await fetch('http://localhost:3001/alumnoCurso/matricular', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
                     rut_alumno: rut,
                     nombre_completo: nombreCompleto,
@@ -113,14 +101,8 @@ export default function Matricula() {
             if (data.success) {
                 setAlumnos([
                     ...alumnos,
-                    {
-                        rut,
-                        nombre_completo: nombreCompleto,
-                        curso: nombreCurso,
-                    }
+                    { rut, nombre_completo: nombreCompleto, curso: nombreCurso }
                 ]);
-
-                // Limpiar campos
                 setRut('');
                 setNombreCompleto('');
                 setCursoSeleccionado('');
@@ -128,7 +110,6 @@ export default function Matricula() {
             } else {
                 setErrores({ rut: data.error || 'Error al matricular alumno' });
             }
-
         } catch (error) {
             console.error('Error al enviar la matrícula:', error);
             setErrores({ rut: 'Error en la conexión con el servidor' });
@@ -212,6 +193,7 @@ export default function Matricula() {
                                 <th>RUT</th>
                                 <th>Nombre</th>
                                 <th>Curso</th>
+                                <th>Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -220,11 +202,20 @@ export default function Matricula() {
                                     <td>{alumno.rut}</td>
                                     <td>{alumno.nombre_completo}</td>
                                     <td>{alumno.curso}</td>
+                                    <td>
+                                        <button
+                                            type="button"
+                                            className="btn btn-danger btn-sm"
+                                            onClick={() => console.log("Desmatricular a:", alumno.rut)}
+                                        >
+                                            Desmatricular
+                                        </button>
+                                    </td>
                                 </tr>
                             ))}
                             {alumnosFiltrados.length === 0 && (
                                 <tr>
-                                    <td colSpan={3} style={{ textAlign: 'center' }}>
+                                    <td colSpan={4} style={{ textAlign: 'center' }}>
                                         No se encontraron alumnos
                                     </td>
                                 </tr>

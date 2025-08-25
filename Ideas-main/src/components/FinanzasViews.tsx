@@ -2,11 +2,10 @@ import { useAdmin } from "../context/AdminContext";
 import FinanzaAdmiV1 from "../pages/FinanzaAdmi";
 import FinanzasAlumno from "../pages/FinanzaAlumno";
 
-
 export default function FinanzasViews() {
   const { tipoUsuario } = useAdmin();
 
-  if (tipoUsuario === "admi") {
+  if (tipoUsuario === "admi" || tipoUsuario === "subAdmi") {
     return <FinanzaAdmiV1 />;
   } else if (tipoUsuario === "alumno") {
     return <FinanzasAlumno />;

@@ -11,7 +11,7 @@ export default function PrivateRoute({ children }: PrivateRouteProps) {
   const { tipoUsuario } = useAdmin();
 
   if (!tipoUsuario) {
-    // No está logeado, redirigir a login
+
     return <Navigate to="/login" replace />;
   }
 
